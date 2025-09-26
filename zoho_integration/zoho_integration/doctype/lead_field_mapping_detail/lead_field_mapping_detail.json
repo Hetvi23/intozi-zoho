@@ -1,0 +1,40 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "autoname": "title",
+ "creation": "2025-09-18 11:52:19.022259",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "erpnext_field",
+  "external_field"
+ ],
+ "fields": [
+  {
+   "fieldname": "erpnext_field",
+   "fieldtype": "Select",
+   "in_list_view": 1,
+   "label": "ERPNext Field"
+  },
+  {
+   "fieldname": "external_field",
+   "fieldtype": "Data",
+   "in_list_view": 1,
+   "label": "External Field"
+  }
+ ],
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-09-22 12:38:33.278333",
+ "modified_by": "Administrator",
+ "module": "Zoho Integration",
+ "name": "Lead Field Mapping Detail",
+ "naming_rule": "By fieldname",
+ "owner": "Administrator",
+ "permissions": [],
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

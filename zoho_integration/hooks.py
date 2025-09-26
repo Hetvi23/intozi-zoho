@@ -148,23 +148,28 @@ app_license = "mit"
 # Scheduled Tasks
 # ---------------
 
-# scheduler_events = {
-# 	"all": [
-# 		"zoho_integration.tasks.all"
-# 	],
-# 	"daily": [
-# 		"zoho_integration.tasks.daily"
-# 	],
-# 	"hourly": [
-# 		"zoho_integration.tasks.hourly"
-# 	],
-# 	"weekly": [
-# 		"zoho_integration.tasks.weekly"
-# 	],
-# 	"monthly": [
-# 		"zoho_integration.tasks.monthly"
-# 	],
-# }
+scheduler_events = {
+    "cron": {
+        "*/2 * * * *": [
+            "zoho_integration.zoho_api.retry_pending_leads"
+        ]
+    }
+	# "all": [
+	# 	"zoho_integration.tasks.all"
+	# ],
+	# "daily": [
+	# 	"zoho_integration.tasks.daily"
+	# ],
+	# "hourly": [
+	# 	"zoho_integration.tasks.hourly"
+	# ],
+	# "weekly": [
+	# 	"zoho_integration.tasks.weekly"
+	# ],
+	# "monthly": [
+	# 	"zoho_integration.tasks.monthly"
+	# ],
+}
 
 # Testing
 # -------

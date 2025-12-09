@@ -1,0 +1,47 @@
+{
+ "actions": [],
+ "allow_rename": 1,
+ "creation": "2025-12-08 23:19:06.173608",
+ "doctype": "DocType",
+ "editable_grid": 1,
+ "engine": "InnoDB",
+ "field_order": [
+  "lead_source",
+  "column_break_ouot",
+  "user"
+ ],
+ "fields": [
+  {
+   "fieldname": "lead_source",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "Lead Source",
+   "options": "Lead Source"
+  },
+  {
+   "fieldname": "column_break_ouot",
+   "fieldtype": "Column Break"
+  },
+  {
+   "fieldname": "user",
+   "fieldtype": "Link",
+   "in_list_view": 1,
+   "label": "User",
+   "options": "User"
+  }
+ ],
+ "grid_page_length": 50,
+ "index_web_pages_for_search": 1,
+ "istable": 1,
+ "links": [],
+ "modified": "2025-12-08 23:20:14.724073",
+ "modified_by": "Administrator",
+ "module": "Zoho Integration",
+ "name": "Intozi Lead Assignment Rule Details",
+ "owner": "Administrator",
+ "permissions": [],
+ "row_format": "Dynamic",
+ "sort_field": "modified",
+ "sort_order": "DESC",
+ "states": []
+}

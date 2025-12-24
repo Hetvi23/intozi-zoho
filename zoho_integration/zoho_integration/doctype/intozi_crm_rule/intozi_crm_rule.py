@@ -7,7 +7,7 @@ from frappe.model.document import Document
 
 
 class IntoziCRMRule(Document):
-	def on_update(self):
+	def validate(self):
 		"""Create or update Assignment Rules for Lead when Intozi CRM Rule is saved"""
 		self.sync_assignment_rules()
 
@@ -20,11 +20,16 @@ class IntoziCRMRule(Document):
 		- Assignment Days: All days (Monday to Sunday)
 		- Users: From assignment_rules child table grouped by lead source
 		"""
-		if not self.assignment_rules:
-			frappe.msgprint(_("No assignment rules defined"), alert=True, indicator="orange")
-			return
 		
-		# Group rules by lead source
+		# Get old document to compare what lead sources existed before
+		old_lead_sources = set()
+		if not self.is_new():
+			old_doc = frappe.get_doc("Intozi CRM Rule", self.name)
+			for rule in old_doc.assignment_rules:
+				if rule.lead_source:
+					old_lead_sources.add(rule.lead_source)
+		
+		# Group current rules by lead source
 		lead_source_map = {}
 		for rule in self.assignment_rules:
 			if rule.lead_source and rule.user:
@@ -32,27 +37,18 @@ class IntoziCRMRule(Document):
 					lead_source_map[rule.lead_source] = []
 				lead_source_map[rule.lead_source].append(rule.user)
 		
-		if not lead_source_map:
-			frappe.throw(_("At least one Lead Source and User must be assigned in the Assignment Rules table"))
-		
-		# Get existing Intozi CRM assignment rules to track which ones should remain
-		existing_rules = frappe.get_all(
-			"Assignment Rule",
-			filters={
-				"name": ["like", "Intozi CRM - %"],
-				"document_type": "Lead"
-			},
-			pluck="name"
-		)
+
+		current_lead_sources = set(lead_source_map.keys())
+		# Find lead sources that were deleted
+		deleted_lead_sources = old_lead_sources - current_lead_sources
 		
 		created_rules = []
 		updated_rules = []
-		current_rule_names = []
+		deleted_rules = []
 		
 		# Create or update assignment rule for each lead source
 		for lead_source, users in lead_source_map.items():
 			rule_name = f"Intozi CRM - {lead_source}"
-			current_rule_names.append(rule_name)
 			
 			# Check if the assignment rule already exists
 			is_existing = frappe.db.exists("Assignment Rule", rule_name)
@@ -91,10 +87,18 @@ class IntoziCRMRule(Document):
 			else:
 				created_rules.append(rule_name)
 		
-		# Delete assignment rules that are no longer in the configuration
-		rules_to_delete = [rule for rule in existing_rules if rule not in current_rule_names]
-		for rule_name in rules_to_delete:
-			frappe.delete_doc("Assignment Rule", rule_name, ignore_permissions=True)
+		# Delete assignment rules for lead sources that were removed
+		for lead_source in deleted_lead_sources:
+			rule_name = f"Intozi CRM - {lead_source}"
+			try:
+				if frappe.db.exists("Assignment Rule", rule_name):
+					frappe.delete_doc("Assignment Rule", rule_name, ignore_permissions=True, force=True)
+					deleted_rules.append(rule_name)
+			except Exception as e:
+				frappe.log_error(
+					message=f"Failed to delete Assignment Rule {rule_name}: {str(e)}",
+					title="Intozi CRM Rule - Assignment Rule Deletion Failed"
+				)
 		
 		# Show summary message
 		messages = []
@@ -102,8 +106,8 @@ class IntoziCRMRule(Document):
 			messages.append(_("{0} Assignment Rule(s) created").format(len(created_rules)))
 		if updated_rules:
 			messages.append(_("{0} Assignment Rule(s) updated").format(len(updated_rules)))
-		if rules_to_delete:
-			messages.append(_("{0} Assignment Rule(s) deleted").format(len(rules_to_delete)))
+		if deleted_rules:
+			messages.append(_("{0} Assignment Rule(s) deleted").format(len(deleted_rules)))
 		
 		if messages:
 			frappe.msgprint(

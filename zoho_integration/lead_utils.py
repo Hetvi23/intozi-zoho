@@ -10,6 +10,9 @@ def sync_lead_owner_with_assigned_to(doc, method=None):
 	If a lead is assigned to someone through round robin logic,
 	that person should also become the Lead Owner.
 	If no one is assigned, keep it as Administrator.
+	
+	This function runs after the document is saved, so assignment rules
+	should have already executed and set the _assign field.
 	"""
 	try:
 		# Skip if this is being called from within a save operation to avoid recursion
@@ -17,6 +20,10 @@ def sync_lead_owner_with_assigned_to(doc, method=None):
 			return
 		
 		frappe.local.sync_lead_owner_in_progress = True
+		
+		# For after_insert, assignment rule should have already run during save
+		# For on_update, assignment rule runs during validate, so _assign should be set
+		# No need to reload - the _assign field should already be set by assignment rule
 		
 		# Get assigned user from _assign field (Frappe's standard assignment field)
 		assigned_user = None
@@ -32,21 +39,27 @@ def sync_lead_owner_with_assigned_to(doc, method=None):
 		if not assigned_user and hasattr(doc, 'assigned_to') and doc.assigned_to:
 			assigned_user = doc.assigned_to
 		
-		# Set lead_owner based on assignment
+		# Determine what lead_owner should be
+		target_lead_owner = None
 		if assigned_user:
 			# Verify the user exists
 			if frappe.db.exists("User", assigned_user):
-				# Set lead_owner to the assigned user
-				if doc.lead_owner != assigned_user:
-					doc.lead_owner = assigned_user
+				target_lead_owner = assigned_user
 			else:
 				# If assigned user doesn't exist, set to Administrator
-				if doc.lead_owner != "Administrator":
-					doc.lead_owner = "Administrator"
+				target_lead_owner = "Administrator"
 		else:
 			# If no one is assigned, set to Administrator
-			if not doc.lead_owner or doc.lead_owner != "Administrator":
-				doc.lead_owner = "Administrator"
+			target_lead_owner = "Administrator"
+		
+		# Update lead_owner if it's different
+		# Use db.set_value to update without triggering another save cycle or hooks
+		if doc.lead_owner != target_lead_owner:
+			# Always use db.set_value to update (works for both new and existing documents)
+			# This ensures the change is saved and doesn't trigger recursive hooks
+			frappe.db.set_value("Lead", doc.name, "lead_owner", target_lead_owner)
+			# Update the document object so it reflects the change
+			doc.lead_owner = target_lead_owner
 		
 		# Clean up the flag
 		delattr(frappe.local, 'sync_lead_owner_in_progress')

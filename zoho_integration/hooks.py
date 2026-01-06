@@ -137,13 +137,12 @@ app_license = "mit"
 # ---------------
 # Hook on document methods and events
 
-# doc_events = {
-# 	"*": {
-# 		"on_update": "method",
-# 		"on_cancel": "method",
-# 		"on_trash": "method"
-# 	}
-# }
+doc_events = {
+	"Lead": {
+		"on_update": "zoho_integration.lead_utils.sync_lead_owner_with_assigned_to",
+		"after_insert": "zoho_integration.lead_utils.sync_lead_owner_with_assigned_to"
+	}
+}
 
 # Scheduled Tasks
 # ---------------

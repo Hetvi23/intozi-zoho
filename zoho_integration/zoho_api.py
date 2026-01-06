@@ -315,6 +315,33 @@ def upsert_zoho_lead(data):
 
     frappe.db.commit()
 
+    # --- Sync Lead Owner with Assigned To after assignment rule runs
+    # Reload the lead to get the _assign value set by assignment rule
+    lead.reload()
+    assigned_user = None
+    
+    # Check _assign field (Frappe's standard assignment field)
+    if hasattr(lead, '_assign') and lead._assign:
+        import json
+        try:
+            assigned_users = json.loads(lead._assign) if isinstance(lead._assign, str) else lead._assign
+            if assigned_users and len(assigned_users) > 0:
+                assigned_user = assigned_users[0]  # Get the first assigned user
+        except:
+            pass
+    
+    # Also check assigned_to field if it exists
+    if not assigned_user and hasattr(lead, 'assigned_to') and lead.assigned_to:
+        assigned_user = lead.assigned_to
+    
+    # Set lead_owner based on assignment
+    if assigned_user and frappe.db.exists("User", assigned_user):
+        frappe.db.set_value("Lead", lead.name, "lead_owner", assigned_user)
+    else:
+        # If no one is assigned, set to Administrator
+        frappe.db.set_value("Lead", lead.name, "lead_owner", "Administrator")
+    frappe.db.commit()
+
     # --- Update Zoho and mark sync done
     if integration_id:
         try:

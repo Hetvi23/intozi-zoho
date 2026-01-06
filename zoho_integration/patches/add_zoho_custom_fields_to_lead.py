@@ -2,24 +2,15 @@
 # For license information, please see license.txt
 
 import frappe
+from frappe.custom.doctype.custom_field.custom_field import create_custom_fields
 
-def add_zoho_custom_fields_to_lead():
+def execute():
 	"""
 	Add custom fields to Lead doctype for Zoho integration.
 	This patch adds custom fields that come from Zoho CRM (Y column in the mapping spreadsheet).
 	"""
-	try:
-		# Check if Lead doctype exists
-		if not frappe.db.exists("DocType", "Lead"):
-			return
-		
-		# Get Lead doctype
-		lead_doc = frappe.get_doc("DocType", "Lead")
-		
-		# Add custom fields from Zoho (based on spreadsheet mapping)
-		# These are the custom fields from the Y column in the mapping spreadsheet
-		# Field names match the spreadsheet exactly
-		custom_fields_to_add = [
+	custom_fields = {
+		"Lead": [
 			{
 				"fieldname": "secondary_email",
 				"fieldtype": "Data",
@@ -82,29 +73,8 @@ def add_zoho_custom_fields_to_lead():
 				"description": "Phone Alternate from Zoho CRM"
 			}
 		]
-		
-		# Add custom fields if they don't exist
-		fields_added = 0
-		for field_data in custom_fields_to_add:
-			field_exists = any(
-				f.fieldname == field_data["fieldname"]
-				for f in lead_doc.fields
-			)
-			
-			if not field_exists:
-				lead_doc.append("fields", field_data)
-				fields_added += 1
-		
-		# Save the doctype only if changes were made
-		if fields_added > 0:
-			lead_doc.save(ignore_permissions=True)
-			frappe.db.commit()
-			frappe.logger().info(f"Zoho custom fields: Added {fields_added} field(s) to Lead doctype.")
-		
-	except Exception as e:
-		frappe.log_error(
-			message=frappe.get_traceback(),
-			title="Error adding Zoho custom fields to Lead doctype"
-		)
-		raise
+	}
+	
+	create_custom_fields(custom_fields, ignore_validate=True, update=True)
+	frappe.clear_cache()
 

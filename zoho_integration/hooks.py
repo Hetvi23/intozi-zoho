@@ -48,6 +48,9 @@ app_license = "mit"
 # doctype_tree_js = {"doctype" : "public/js/doctype_tree.js"}
 # doctype_calendar_js = {"doctype" : "public/js/doctype_calendar.js"}
 
+# Include JS for Lead assignment sync
+doctype_js = {"Lead" : "public/js/lead_assignment_sync.js"}
+
 # Svg Icons
 # ------------------
 # include app icons in desk

@@ -96,8 +96,16 @@ function sync_lead_owner_immediately(frm) {
 				callback: function(response) {
 					if (response.message && response.message.success) {
 						const new_owner = response.message.new_owner || expected_owner;
+						const new_owner_name = response.message.new_owner_name;
+						
 						// Update the form field immediately
 						frm.set_value('lead_owner', new_owner);
+						
+						// Update lead_owner_name if it exists and was returned
+						if (new_owner_name && frm.meta.has_field('lead_owner_name')) {
+							frm.set_value('lead_owner_name', new_owner_name);
+						}
+						
 						// Force save to persist the change
 						frm.save(undefined, () => {
 							// Owner saved successfully

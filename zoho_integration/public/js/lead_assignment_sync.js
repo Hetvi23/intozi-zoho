@@ -23,17 +23,25 @@ frappe.xcall = function(method, args) {
 				}
 				
 				if (frm && frm.doc && frm.doc.name === args.name) {
-					// Sync owner for the open form immediately
-					setTimeout(function() {
-						sync_lead_owner_immediately(frm);
-					}, 200);
+					// Check if change_lead_owner is enabled
+					if (!frm.doc.change_lead_owner) {
+						// Sync owner for the open form immediately
+						setTimeout(function() {
+							sync_lead_owner_immediately(frm);
+						}, 200);
+					}
 				} else {
-					// Form not open, just update in database
-					frappe.call({
-						method: 'zoho_integration.lead_utils.sync_lead_owner_from_assignment',
-						args: { lead_name: args.name },
-						callback: function(r) {
-							// Owner updated in database
+					// Form not open, check if change_lead_owner is enabled before updating in database
+					frappe.db.get_value('Lead', args.name, 'change_lead_owner', function(r) {
+						if (!r || !r.change_lead_owner) {
+							// change_lead_owner is not enabled, proceed with sync
+							frappe.call({
+								method: 'zoho_integration.lead_utils.sync_lead_owner_from_assignment',
+								args: { lead_name: args.name },
+								callback: function(r) {
+									// Owner updated in database
+								}
+							});
 						}
 					});
 				}
@@ -70,6 +78,12 @@ frappe.ui.form.on('Lead', {
 // Function to sync lead owner immediately and save
 function sync_lead_owner_immediately(frm) {
 	if (!frm || !frm.doc || !frm.doc.name) return;
+	
+	// Check if change_lead_owner checkbox is ticked - if yes, skip auto-sync
+	if (frm.doc.change_lead_owner) {
+		console.log('change_lead_owner is enabled - skipping auto-sync');
+		return;
+	}
 	
 	// Get current assignment from database
 	frappe.db.get_value('Lead', frm.doc.name, '_assign', (r) => {

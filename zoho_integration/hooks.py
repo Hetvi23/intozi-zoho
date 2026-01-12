@@ -142,6 +142,7 @@ doctype_js = {"Lead" : "public/js/lead_assignment_sync.js"}
 
 doc_events = {
 	"Lead": {
+		"validate": "zoho_integration.lead_utils.sync_lead_owner_name_from_owner",
 		"on_update": "zoho_integration.lead_utils.sync_lead_owner_with_assigned_to",
 		"after_insert": "zoho_integration.lead_utils.sync_lead_owner_with_assigned_to"
 	}

@@ -239,14 +239,6 @@ def upsert_zoho_lead(data):
         "Contacted": "Replied", "Junk Lead": "Do Not Contact", "Lost Lead": "Lost Quotation",
         "Not Contacted": "Open", "Pre-Qualified": "Interested", "Not Qualified": "Do Not Contact",
     }
-    SOURCE_MAP = {
-        "-None-": None, "Advertisement": "Advertisement", "Cold Call": "Cold Call",
-        "Employee Referral": "Employee Referral", "External Referral": "External Referral",
-        "Online Store": "Online Store", "Partner": "Partner", "Public Relations": "Public Relations",
-        "Sales Email Alias": "Sales Email", "Seminar Partner": "Seminar Partner",
-        "Internal Seminar": "Seminar Partner", "Trade Show": "Exhibition", "Web Download": "Website",
-        "Web Research": "Website", "Chat": "Chat", "X (Twitter)": "Twitter", "Facebook": "Facebook",
-    }
     INDUSTRY_MAP = {
         "-None-": None, "Government/Military": "Defense", "Large Enterprise": "Manufacturing",
         "ERP (Enterprise Resource Planning)": "Software", "ManagementISV": "Consulting",
@@ -256,6 +248,18 @@ def upsert_zoho_lead(data):
         "Wireless Industry": "Telecommunications", "Data/Telecom OEM": "Telecommunications",
         "Optical Networking": "Telecommunications", "Storage Equipment": "Electronics",
         "Storage Service Provider": "Service", "ASP (Application Service Provider)": "Technology",
+    }
+    # Country code to full country name mapping
+    COUNTRY_MAP = {
+        "IN": "India",
+        "US": "United States",
+        "GB": "United Kingdom",
+        "UK": "United Kingdom",
+        "AE": "United Arab Emirates",
+        "AU": "Australia",
+        "CA": "Canada",
+        "SG": "Singapore",
+        "-None-": None,
     }
 
     # --- Load mapping doc
@@ -281,13 +285,24 @@ def upsert_zoho_lead(data):
         elif erp_field == "status":
             value = STATUS_MAP.get(value, "Open")
         elif erp_field == "source":
-            value = SOURCE_MAP.get(value, "Advertisement")
+            if not value or value == "-None-":
+                value = "Advertisement"
+            # Otherwise, keep value as-is (no mapping)
         elif erp_field == "industry":
             mapped_value = INDUSTRY_MAP.get(value)
             if mapped_value:
                 value = mapped_value
             if value and not frappe.db.exists("Industry Type", value):
                 frappe.get_doc({"doctype": "Industry Type", "industry": value}).insert(ignore_permissions=True)
+        elif erp_field == "country":
+            # Convert country code to full country name
+            mapped_country = COUNTRY_MAP.get(value)
+            if mapped_country:
+                value = mapped_country
+            # Validate that the country exists in ERPNext
+            if value and not frappe.db.exists("Country", value):
+                # If country doesn't exist, skip setting it
+                continue
         elif erp_field == "no_of_employees":
             value = map_employees_to_range(value)
         elif erp_field == "annual_revenue":
@@ -317,6 +332,7 @@ def upsert_zoho_lead(data):
 
     # --- Sync Lead Owner with Assigned To after assignment rule runs
     # Reload the lead to get the _assign value set by assignment rule
+    return lead
     lead.reload()
     assigned_user = None
     

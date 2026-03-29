@@ -38,6 +38,8 @@ def sync_lead_owner_from_assignment(lead_name):
 				target_lead_owner = assigned_user
 			else:
 				target_lead_owner = "Administrator"
+		elif not lead.custom_integration_lead_id: 
+			target_lead_owner = frappe.session.user
 		else:
 			target_lead_owner = "Administrator"
 		
@@ -170,12 +172,16 @@ def sync_lead_owner_with_assigned_to(doc, method=None):
 		doc_lead_owner = getattr(doc, "lead_owner", None) or "Administrator"
 		
 		# Get current lead_owner from database
-		db_lead_owner = "Administrator"
+		if doc.custom_integration_lead_id:
+			db_lead_owner = "Administrator"
+
 		if doc.name:
 			db_lead_owner = frappe.db.get_value("Lead", doc.name, "lead_owner") or "Administrator"
 		else:
+			if doc.custom_integration_lead_id:
+				db_lead_owner = "Administrator"
 			# New document - no database value yet
-			db_lead_owner = "Administrator"
+			# db_lead_owner = "Administrator"
 		
 		# Get assigned user from database (most reliable source)
 		assigned_user = None
@@ -417,3 +423,63 @@ def sync_all_leads_owner_from_assignment():
 			print(f"Error: {str(e)}")
 		return {"success": False, "message": str(e)}
 
+
+
+from frappe.share import add
+@frappe.whitelist()
+def ensure_lead_owner_share(doc):
+    """
+    Ensure lead_owner has read + write share
+    Only add/update if required (no duplicate work)
+    """
+    doc = frappe.get_doc("Lead", doc)
+    print("\n \n lead permissin 123", doc.name)
+    #custom field must exist
+    if not doc.custom_integration_lead_id:
+        return
+
+    lead_owner = doc.lead_owner
+    if not lead_owner:
+        return
+    print("\n\n lead owner ", lead_owner)
+    existing_share = frappe.db.get_value(
+        "DocShare",
+        {
+            "share_doctype": doc.doctype,
+            "share_name": doc.name,
+            "user": lead_owner
+        },
+        ["name", "read", "write"],
+        as_dict=True
+    )
+    print("\n\n\n 458", existing_share)
+    #Case 1: Share already exists
+    if existing_share:
+        print("\n\n 461 ", existing_share)
+        # Already has full permission → DO NOTHING
+        if existing_share.read and existing_share.write:
+            return
+        elif existing_share:
+            return
+
+        # Missing write → upgrade only if needed
+        if not existing_share.write:
+            frappe.db.set_value(
+                "DocShare",
+                existing_share.name,
+                {
+                    "read": 1,
+                    "write": 1
+                }
+            )
+
+    # Case 2: No share exists → create new
+    else:
+        frappe.share.add(
+            doc.doctype,
+            doc.name,
+            lead_owner,
+            read=1,
+            write=1,
+            share=0
+        )

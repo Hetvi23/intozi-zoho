@@ -112,6 +112,15 @@ function sync_lead_owner_immediately(frm) {
 						const new_owner = response.message.new_owner || expected_owner;
 						const new_owner_name = response.message.new_owner_name;
 						
+							frappe.call({
+											method: 'zoho_integration.lead_utils.ensure_lead_owner_share',
+											args: {
+												doc: frm.doc.name
+											},
+											callback: function(response) {
+												console.log("this is new lead")
+											}
+										});
 						// Update the form field immediately
 						frm.set_value('lead_owner', new_owner);
 						
@@ -123,7 +132,7 @@ function sync_lead_owner_immediately(frm) {
 						// Force save to persist the change
 						frm.save(undefined, () => {
 							// Owner saved successfully
-						});
+						});					
 					}
 				},
 				error: function(err) {

@@ -115,3 +115,4 @@ class IntoziCRMRule(Document):
 				alert=True,
 				indicator="green"
 			)
+   

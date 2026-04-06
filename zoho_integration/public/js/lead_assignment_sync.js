@@ -58,7 +58,7 @@ frappe.xcall = function(method, args) {
 frappe.ui.form.on('Lead', {
 	refresh: function(frm) {
 		// Sync on form refresh
-		if (frm.doc.name) {
+		if (frm.doc.name && frm.doc.lead_owner == "Administrator" || frm.doc.lead_owner == frappe.session.user) {
 			setTimeout(function() {
 				sync_lead_owner_immediately(frm);
 			}, 500);

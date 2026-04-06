@@ -469,7 +469,8 @@ def ensure_lead_owner_share(doc):
                 existing_share.name,
                 {
                     "read": 1,
-                    "write": 1
+                    "write": 1,
+                    "share": 1
                 }
             )
 
@@ -481,5 +482,5 @@ def ensure_lead_owner_share(doc):
             lead_owner,
             read=1,
             write=1,
-            share=0
+            share=1
         )
